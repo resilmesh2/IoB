@@ -7,20 +7,20 @@ This document describes how to deploy the integrated Attack Flow system using Do
 The system consists of three main components:
 
 1. **Attack Flow Builder** (`attackflow_builder`) - Vue.js frontend for creating attack flows
-   - Port: 8080
-   - Access: http://localhost:8080
+   - Port: 9080
+   - Access: http://localhost:9080
 
 2. **Sanic Web Server** (`sanic_web_server`) - Python backend for processing alerts
-   - Port: 8000
-   - Access: http://localhost:8000
+   - Port: 9003
+   - Access: http://localhost:9003
    - API endpoints for flow management and STIX pattern validation
 
 3. **STIX Modeler** (`stix_modeler`) - React UI for STIX object visualization
-   - Port: 3000
-   - Access: http://localhost:3000
+   - Port: 3400
+   - Access: http://localhost:3400
 
 4. **CTI STIX Visualization** - OASIS CTI STIX visualization library (served by Sanic backend)
-   - Access: http://localhost:8000/cti-stix-visualization
+   - Access: http://localhost:9003/cti-stix-visualization/index.html
 
 ## Prerequisites
 
