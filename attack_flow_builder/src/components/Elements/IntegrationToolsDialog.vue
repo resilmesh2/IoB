@@ -191,7 +191,7 @@ export default defineComponent({
      * Launch the local STIX Modeler application
      */
     launchStixModeler() {
-      const stixModelerUrl = "http://localhost:3000";
+      const stixModelerUrl = "http://localhost:3400";
       window.open(stixModelerUrl, "_blank", "noopener,noreferrer");
     },
 

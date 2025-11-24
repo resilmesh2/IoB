@@ -6,9 +6,9 @@ services:
       dockerfile: Dockerfile
     container_name: attackflow_builder
     ports:
-      - "8080:8080"
+      - "9080:8080"
     networks:
-      - attackflow_network
+      - resilmesh_network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/"]
       interval: 30s
@@ -24,7 +24,7 @@ services:
       dockerfile: Dockerfile
     container_name: sanic_web_server
     ports:
-      - "8000:8000"
+      - "9003:8000"
     environment:
       - DEBUG=${DEBUG:-false}
       - PROJECT_ROOT=/app
@@ -40,7 +40,7 @@ services:
       - backend_alerts:/app/alerts
       - backend_stix:/app/stix_bundles
     networks:
-      - attackflow_network
+      - resilmesh_network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -58,9 +58,9 @@ services:
       dockerfile: Dockerfile
     container_name: stix_modeler
     ports:
-      - "3000:3000"
+      - "3400:3000"
     networks:
-      - attackflow_network
+      - resilmesh_network
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/"]
       interval: 30s
@@ -74,7 +74,3 @@ volumes:
     driver: local
   backend_stix:
     driver: local
-
-networks:
-  attackflow_network:
-    driver: bridge
