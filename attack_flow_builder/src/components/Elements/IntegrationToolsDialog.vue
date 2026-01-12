@@ -184,7 +184,8 @@ export default defineComponent({
      * Launch the STIX Visualizer in a new tab/window
      */
     launchStixVisualizer() {
-      window.open('/cti-stix-visualization/index.html', '_blank');
+      const stixVisualizerUrl = "http://localhost:9003";
+      window.open(stixVisualizerUrl, '/cti-stix-visualization/index.html', '_blank');
     },
 
     /**
