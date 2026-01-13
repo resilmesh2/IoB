@@ -6,16 +6,16 @@ This document describes how to deploy the integrated Attack Flow system using Do
 
 The system consists of three main components:
 
-1. **Attack Flow Builder** (`attackflow_builder`) - Vue.js frontend for creating attack flows
+1. **Attack Flow Builder** (`resilmesh_tap_attackflow_builder`) - Vue.js frontend for creating attack flows
    - Port: 9080
    - Access: http://localhost:9080
 
-2. **Sanic Web Server** (`sanic_web_server`) - Python backend for processing alerts
+2. **Sanic Web Server** (`resilmesh_tap_sanic_web_server`) - Python backend for processing alerts
    - Port: 9003
    - Access: http://localhost:9003
    - API endpoints for flow management and STIX pattern validation
 
-3. **STIX Modeler** (`stix_modeler`) - React UI for STIX object visualization
+3. **STIX Modeler** (`resilmesh_tap_stix_modeler`) - React UI for STIX object visualization
    - Port: 3400
    - Access: http://localhost:3400
 
@@ -57,22 +57,22 @@ The system consists of three main components:
 ### Build specific service:
 ```bash
 # Build only the frontend
-docker-compose build attackflow_builder
+docker-compose build resilmesh_tap_attackflow_builder
 
 # Build only the backend
-docker-compose build sanic_web_server
+docker-compose build resilmesh_tap_sanic_web_server
 
 # Build only the STIX modeler
-docker-compose build stix_modeler
+docker-compose build resilmesh_tap_stix_modeler
 ```
 
 ### Start specific service:
 ```bash
 # Start only the backend
-docker-compose up sanic_web_server
+docker-compose up resilmesh_tap_sanic_web_server
 
 # Start frontend and backend
-docker-compose up attackflow_builder sanic_web_server
+docker-compose up resilmesh_tap_attackflow_builder resilmesh_tap_sanic_web_server
 ```
 
 ## Development Mode
@@ -81,7 +81,7 @@ For development, you can run services individually:
 
 ```bash
 # Start backend only
-docker-compose up sanic_web_server
+docker-compose up resilmesh_tap_sanic_web_server
 
 # Start frontend in development (outside Docker)
 cd attack_flow_builder
@@ -150,9 +150,9 @@ docker-compose build --no-cache
 docker-compose logs
 
 # Specific service
-docker-compose logs sanic_web_server
-docker-compose logs attackflow_builder
-docker-compose logs stix_modeler
+docker-compose logs resilmesh_tap_sanic_web_server
+docker-compose logs resilmesh_tap_attackflow_builder
+docker-compose logs resilmesh_tap_stix_modeler
 ```
 
 ## Stopping Services
