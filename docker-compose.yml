@@ -1,10 +1,10 @@
 services:
   # Attack Flow Builder Frontend
-  resilmesh_tap_attackflow_builder:
+  resilmesh-tap-attackflow-builder:
     build:
       context: ./attack_flow_builder
       dockerfile: Dockerfile
-    container_name: resilmesh_tap_attackflow_builder
+    container_name: resilmesh-tap-attackflow-builder
     ports:
       - "9080:8080"
     networks:
@@ -18,11 +18,11 @@ services:
     restart: unless-stopped
 
   # Sanic Web Server Backend
-  resilmesh_tap_sanic_web_server:
+  resilmesh-tap-sanic-web-server:
     build:
       context: ./sanic_web_server
       dockerfile: Dockerfile
-    container_name: resilmesh_tap_sanic_web_server
+    container_name: resilmesh-tap-sanic-web-server
     ports:
       - "9003:8000"
     environment:
@@ -49,14 +49,14 @@ services:
       start_period: 40s
     restart: unless-stopped
     depends_on:
-      - resilmesh_tap_attackflow_builder
+      - resilmesh-tap-attackflow-builder
 
   # STIX Modeler UI
-  resilmesh_tap_stix_modeler:
+  resilmesh-tap-stix-modeler:
     build:
       context: ./UI
       dockerfile: Dockerfile
-    container_name: resilmesh_tap_stix_modeler
+    container_name: resilmesh-tap-stix-modeler
     ports:
       - "3400:3000"
     networks:
