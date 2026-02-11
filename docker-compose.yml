@@ -22,6 +22,7 @@ services:
     build:
       context: ./sanic_web_server
       dockerfile: Dockerfile
+      network: host
     container_name: resilmesh-tap-sanic-web-server
     ports:
       - "9003:8000"
