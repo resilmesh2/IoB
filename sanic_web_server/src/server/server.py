@@ -10,7 +10,7 @@ from src.attack_flow.flow_handler import AttackFlowHandler
 from src.attack_flow.flowstatemachine import load_attack_flow
 from src.stix.complete_oca_framework import OCAIOBFramework
 from src.stix.stixIoB import create_stix_objects_for_correlation, create_sequential_relationships_and_export, create_init_stix_objects
-from stix2patterns.validator import run_validator
+# from stix2patterns.validator import run_validator
 
 
 # Initialize correlation engine and database
@@ -583,75 +583,75 @@ async def activate_flow(request, flow_name):
         logger.error(f"Error activating flow: {str(e)}")
         return response.json({"status": "error", "message": str(e)}, status=500)
 
-# STIX Pattern validation endpoint
-@app.route("/api/validate-pattern", methods=["POST"])
-async def validate_stix_pattern(request):
-    """Validate a STIX pattern"""
-    try:
-        data = request.json
-        if not data:
-            return response.json({"error": "No JSON data provided"}, status=400)
+# # STIX Pattern validation endpoint
+# @app.route("/api/validate-pattern", methods=["POST"])
+# async def validate_stix_pattern(request):
+#     """Validate a STIX pattern"""
+#     try:
+#         data = request.json
+#         if not data:
+#             return response.json({"error": "No JSON data provided"}, status=400)
         
-        pattern = data.get("pattern", "")
+#         pattern = data.get("pattern", "")
         
-        if not pattern:
-            return response.json({
-                "valid": False, 
-                "errors": ["Empty pattern provided"]
-            })
+#         if not pattern:
+#             return response.json({
+#                 "valid": False, 
+#                 "errors": ["Empty pattern provided"]
+#             })
         
-        # Run STIX pattern validation
-        errors = run_validator(pattern)
+#         # Run STIX pattern validation
+#         errors = run_validator(pattern)
         
-        return response.json({
-            "valid": len(errors) == 0,
-            "errors": errors if errors else [],
-            "pattern": pattern
-        })
+#         return response.json({
+#             "valid": len(errors) == 0,
+#             "errors": errors if errors else [],
+#             "pattern": pattern
+#         })
     
-    except Exception as e:
-        return response.json({
-            "valid": False, 
-            "errors": [f"Validation error: {str(e)}"]
-        }, status=500)
+#     except Exception as e:
+#         return response.json({
+#             "valid": False, 
+#             "errors": [f"Validation error: {str(e)}"]
+#         }, status=500)
 
-@app.route("/api/validate-flow", methods=["POST"])
-async def validate_flow_patterns(request):
-    """Validate all STIX patterns in an attack flow"""
-    try:
-        data = request.json
-        if not data:
-            return response.json({"error": "No JSON data provided"}, status=400)
+# @app.route("/api/validate-flow", methods=["POST"])
+# async def validate_flow_patterns(request):
+#     """Validate all STIX patterns in an attack flow"""
+#     try:
+#         data = request.json
+#         if not data:
+#             return response.json({"error": "No JSON data provided"}, status=400)
         
-        flow_objects = data.get("objects", [])
-        validation_results = []
+#         flow_objects = data.get("objects", [])
+#         validation_results = []
         
-        for obj in flow_objects:
-            if obj.get("type") == "attack-condition":
-                pattern = obj.get("pattern", "")
-                pattern_type = obj.get("pattern_type", "")
-                node_name = obj.get("name", "unnamed")
+#         for obj in flow_objects:
+#             if obj.get("type") == "attack-condition":
+#                 pattern = obj.get("pattern", "")
+#                 pattern_type = obj.get("pattern_type", "")
+#                 node_name = obj.get("name", "unnamed")
                 
-                if pattern and pattern_type == "stix":
-                    errors = run_validator(pattern)
-                    validation_results.append({
-                        "node_name": node_name,
-                        "node_id": obj.get("id", "unknown"),
-                        "pattern": pattern,
-                        "valid": len(errors) == 0,
-                        "errors": errors
-                    })
+#                 if pattern and pattern_type == "stix":
+#                     errors = run_validator(pattern)
+#                     validation_results.append({
+#                         "node_name": node_name,
+#                         "node_id": obj.get("id", "unknown"),
+#                         "pattern": pattern,
+#                         "valid": len(errors) == 0,
+#                         "errors": errors
+#                     })
         
-        all_valid = all(result["valid"] for result in validation_results)
+#         all_valid = all(result["valid"] for result in validation_results)
         
-        return response.json({
-            "flow_valid": all_valid,
-            "total_patterns": len(validation_results),
-            "results": validation_results
-        })
+#         return response.json({
+#             "flow_valid": all_valid,
+#             "total_patterns": len(validation_results),
+#             "results": validation_results
+#         })
     
-    except Exception as e:
-        return response.json({"error": str(e)}, status=500)
+    # except Exception as e:
+    #     return response.json({"error": str(e)}, status=500)
 
 @app.route("/api/upload-schedule", methods=["POST"])
 async def upload_schedule(request):
@@ -689,14 +689,14 @@ async def upload_schedule(request):
 
     return response.json({"status": "success", "remote_path": remote_path})
 
-async def setup_ssh_key_auth(kali_host: str, kali_user: str, kali_pass: str, kali_port: int, target_host: str, target_user: str, target_pass: str):
+async def setup_ssh_key_auth_windows(kali_host: str, kali_user: str, kali_pass: str, kali_port: int, target_host: str, target_user: str, target_pass: str):
     """
     Setup SSH key authentication by copying Kali's public key to Windows target using SSH
     """
-    logger.info(f"Starting SSH key setup for {target_user}@{target_host}")
+    logger.info(f"Starting SSH key setup for Windows target {target_user}@{target_host}")
 
     # 1) Read Kali's public key
-    read_pubkey_cmd = "cat /home/kali/.ssh/id_ed25519.pub"
+    read_pubkey_cmd = f"cat /home/{kali_user}/.ssh/id_ed25519.pub"
     rc, pubkey, err = await ssh_to_kali(kali_host, kali_user, kali_pass, kali_port, read_pubkey_cmd, timeout=30)
 
     if rc != 0:
@@ -740,18 +740,70 @@ async def setup_ssh_key_auth(kali_host: str, kali_user: str, kali_pass: str, kal
     logger.info("SSH key setup completed successfully")
     return True, out
 
+async def setup_ssh_key_auth_linux(kali_host: str, kali_user: str, kali_pass: str, kali_port: int, target_host: str, target_user: str, target_pass: str):
+    """
+    Setup SSH key authentication by copying Kali's public key to Linux target using SSH
+    """
+    logger.info(f"Starting SSH key setup for Linux target {target_user}@{target_host}")
+
+    # 1) Read Kali's public key
+    read_pubkey_cmd = f"cat /home/{kali_user}/.ssh/id_ed25519.pub"
+    rc, pubkey, err = await ssh_to_kali(kali_host, kali_user, kali_pass, kali_port, read_pubkey_cmd, timeout=30)
+
+    if rc != 0:
+        logger.error(f"Failed to read public key: rc={rc}, err={err}")
+        return False, f"Failed to read public key from Kali: {err}"
+
+    pubkey = pubkey.strip()
+    if not pubkey:
+        logger.error("Public key is empty")
+        return False, "Public key is empty"
+
+    logger.info(f"Read public key: {pubkey[:50]}...")
+
+    # 2) Use SSH to copy the public key to Linux target
+    # Create .ssh directory with proper permissions
+    create_dir_cmd = f'sshpass -p {shlex.quote(target_pass)} ssh -o StrictHostKeyChecking=no -p 22 {target_user}@{target_host} "mkdir -p ~/.ssh && chmod 700 ~/.ssh"'
+
+    # Check if key already exists
+    key_fingerprint = pubkey.split()[-1] if len(pubkey.split()) > 2 else pubkey[:30]
+    check_key_cmd = f'sshpass -p {shlex.quote(target_pass)} ssh -o StrictHostKeyChecking=no -p 22 {target_user}@{target_host} "grep -F \\"{key_fingerprint}\\" ~/.ssh/authorized_keys 2>/dev/null && echo KEY_EXISTS || echo KEY_NOT_FOUND"'
+
+    # Add the public key if it doesn't exist
+    add_key_cmd = f'sshpass -p {shlex.quote(target_pass)} ssh -o StrictHostKeyChecking=no -p 22 {target_user}@{target_host} "echo \\"{pubkey}\\" >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"'
+
+    # Combine commands: create dir, check if key exists, add if not
+    setup_ssh_cmd = f'{create_dir_cmd} && KEY_CHECK=$({check_key_cmd}) && if echo "$KEY_CHECK" | grep -q "KEY_EXISTS"; then echo "KEY_EXISTS: Public key already present"; else {add_key_cmd} && echo "KEY_ADDED: SSH key setup completed"; fi'
+
+    # Execute the SSH key setup
+    logger.info(f"Copying SSH key to Linux target {target_host} via SSH")
+    rc, out, err = await ssh_to_kali(kali_host, kali_user, kali_pass, kali_port, setup_ssh_cmd, timeout=60)
+
+    logger.info(f"SSH key setup completed: rc={rc}")
+    if out:
+        logger.info(f"Setup output: {out}")
+    if err:
+        logger.info(f"Setup errors: {err}")
+
+    if rc != 0:
+        logger.error(f"SSH key setup failed with rc={rc}, err={err}")
+        return False, f"Failed to setup SSH key: {err}"
+
+    logger.info("SSH key setup completed successfully for Linux target")
+    return True, out
+
 @app.route("/api/run-atomic", methods=["POST"])
 async def run_atomic(request):
     """
-    Runs Invoke-AtomicRunner from pwsh on Kali using SSH key authentication to Windows.
+    Runs Invoke-AtomicRunner from pwsh on Kali using SSH key authentication to target (Windows or Linux).
     This will:
-    1. Copy Kali's public key to Windows target via SSH (using password for initial setup)
+    1. Copy Kali's public key to target via SSH (using password for initial setup)
     2. Use SSH key authentication for PowerShell remoting
 
     JSON body:
     {
       "kali":    {"host":"", "user":"", "password":"", "port":22},
-      "target":  {"host":"", "user":"", "password":""},  // password used only for initial key setup
+      "target":  {"host":"", "user":"", "password":"", "os":"windows|linux"},  // os determines setup method
       "local_schedule_on_kali": "/tmp/IcedID.csv",
       "ssh_port": 22,          // optional SSH port for target
       "timeout": 1800          // optional
@@ -763,6 +815,7 @@ async def run_atomic(request):
     schedule_path = data.get("local_schedule_on_kali")
     ssh_port = int(data.get("ssh_port", 22))
     timeout = int(data.get("timeout", 1800))
+    target_os = target.get("os", "windows").lower()
 
     # Validate inputs
     for k in ("host", "user", "password"):
@@ -774,12 +827,22 @@ async def run_atomic(request):
         if not target.get(k):
             return response.json({"status": "error", "error": f"Missing target {k}"}, status=400)
 
-    # 1) Setup SSH key authentication
-    logger.info("Setting up SSH key authentication...")
-    success, message = await setup_ssh_key_auth(
-        kali["host"], kali["user"], kali["password"], int(kali.get("port", 22)),
-        target["host"], target["user"], target["password"]
-    )
+    # Validate target OS
+    if target_os not in ("windows", "linux"):
+        return response.json({"status": "error", "error": f"Invalid target OS: {target_os}. Must be 'windows' or 'linux'"}, status=400)
+
+    # 1) Setup SSH key authentication based on target OS
+    logger.info(f"Setting up SSH key authentication for {target_os} target...")
+    if target_os == "linux":
+        success, message = await setup_ssh_key_auth_linux(
+            kali["host"], kali["user"], kali["password"], int(kali.get("port", 22)),
+            target["host"], target["user"], target["password"]
+        )
+    else:  # windows
+        success, message = await setup_ssh_key_auth_windows(
+            kali["host"], kali["user"], kali["password"], int(kali.get("port", 22)),
+            target["host"], target["user"], target["password"]
+        )
 
     if not success:
         return response.json({"status": "error", "error": f"SSH key setup failed: {message}"}, status=500)
@@ -793,7 +856,7 @@ $VerbosePreference='Continue';
 $WarningPreference='Continue';
 $Target='{target['host']}';
 $User='{target['user']}';
-$KeyPath='/home/kali/.ssh/id_ed25519';
+$KeyPath='/home/{kali["user"]}/.ssh/id_ed25519';
 $SSHPort={ssh_port};
 $Sched='{schedule_path}';
 

@@ -366,7 +366,8 @@ export default defineComponent({
             target: {
               host: this.targetConfig.ipAddress,
               user: this.targetConfig.username,
-              password: this.targetConfig.password
+              password: this.targetConfig.password,
+              os: this.targetConfig.os
             },
             local_schedule_on_kali: remoteFilePath,
             auth: "ntlm",
