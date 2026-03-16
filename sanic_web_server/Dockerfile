@@ -33,6 +33,7 @@ RUN mkdir -p ./docs/attackflow_graphs && \
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
+RUN mkdir -p ./stix_bundles && chown -R app:app ./stix_bundles
 USER app
 
 # Set environment variables for paths
