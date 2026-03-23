@@ -22,6 +22,19 @@ ATTACKFLOW_FILE = os.getenv("ATTACKFLOW_FILE", "./docs/attackflow_graphs/Resilme
 # Debug flag for correlation engine
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
 
+# ---------------------------------------------------------------
+# Peer bundle-sharing configuration
+#
+# PEER_URL       : Base URL of the other IoB instance, e.g.
+#                  http://iob-instance-b:9003
+#                  Leave unset (or empty) to disable outbound push.
+# PEER_AUTH_TOKEN: Shared secret sent as Bearer token in the push
+#                  request.  Both instances must use the same value.
+#                  Leave unset to skip auth (not recommended in prod).
+# ---------------------------------------------------------------
+PEER_URL = os.getenv("PEER_URL", "").rstrip("/")
+PEER_AUTH_TOKEN = os.getenv("PEER_AUTH_TOKEN", "")
+
 def debug_print(*args, **kwargs):
     """Print debug messages only when DEBUG is True"""
     if DEBUG:

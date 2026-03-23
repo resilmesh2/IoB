@@ -1,6 +1,7 @@
 from sanic import Sanic, response
 from src.server.config import *
 import asyncio, tempfile, os, shlex, uuid
+import aiohttp
 from correlate import CorrelationEngine
 # from db import Neo4jDatabase
 import json as json_module
@@ -107,6 +108,7 @@ def get_or_create_global_flow(app) -> str:
                 "matched_alerts": [],
                 "attack_path": [],
                 "flow_completed": False,
+                "peer_push_scheduled": False,
                 "created_at": datetime.now().isoformat(),
                 "last_update": None
             }
@@ -229,6 +231,54 @@ def get_global_attack_flow_context(app) -> dict:
             "metadata": app.ctx.flow_metadata.copy()
         }
 
+
+# ---------------------------------------------------------------
+# Peer bundle-sharing -- CLIENT side
+# Pushes the completed STIX bundle to the configured peer instance.
+# Runs as a Sanic background task so it never blocks alert processing.
+# Disabled silently when PEER_URL is not configured.
+# ---------------------------------------------------------------
+async def push_bundle_to_peer(bundle_path):
+    '''POST the completed STIX bundle to the peer IoB instance.
+
+    Args:
+        bundle_path: pathlib.Path to the local bundle JSON file.
+    '''
+    if not PEER_URL:
+        logger.debug("PEER_URL not configured -- skipping peer push")
+        return
+
+    endpoint = f"{PEER_URL}/api/stix-bundles/receive"
+    headers = {}
+    if PEER_AUTH_TOKEN:
+        headers["Authorization"] = f"Bearer {PEER_AUTH_TOKEN}"
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            with open(bundle_path, 'rb') as fh:
+                form = aiohttp.FormData()
+                form.add_field(
+                    'bundle',
+                    fh,
+                    filename=bundle_path.name,
+                    content_type='application/json'
+                )
+                async with session.post(
+                    endpoint, data=form, headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as resp:
+                    if resp.status == 200:
+                        logger.info(f"Bundle pushed to peer {PEER_URL} -- HTTP {resp.status}")
+                    else:
+                        body = await resp.text()
+                        logger.error(f"Peer push failed -- HTTP {resp.status}: {body}")
+    except aiohttp.ClientConnectorError as e:
+        logger.error(f"Peer push: could not connect to {PEER_URL} -- {e}")
+    except asyncio.TimeoutError:
+        logger.error(f"Peer push: timed out connecting to {PEER_URL}")
+    except Exception as e:
+        logger.error(f"Peer push: unexpected error -- {e}")
+
 async def run_shell(cmd: str, timeout: int = 600):
     proc = await asyncio.create_subprocess_shell(
         cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
@@ -285,6 +335,7 @@ async def reset_flow(request):
                 ctx["matched_alerts"] = []
                 ctx["attack_path"] = []
                 ctx["flow_completed"] = False
+                ctx["peer_push_scheduled"] = False
                 ctx["sequence_valid"] = True
                 ctx["last_update"] = datetime.now().isoformat()
                 
@@ -348,7 +399,19 @@ async def receive_wazuh_alert(request):
         
         # Update the context with correlation results
         updated_context = update_global_attack_flow(request.app, correlation_result, alert_data)
-        
+
+        # If the flow just completed, schedule a peer bundle push as a background task.
+        # stix_bundle_file is set exactly once (inside update_global_attack_flow when the
+        # bundle is written), so this fires exactly once per completed flow.
+        if updated_context.get("flow_completed") and updated_context.get("stix_bundle_file") and not updated_context.get("peer_push_scheduled"):
+            bundle_path = STIX_STORAGE_PATH / updated_context["stix_bundle_file"]
+            request.app.add_task(push_bundle_to_peer(bundle_path))
+            logger.info(f"Scheduled peer push for bundle: {updated_context['stix_bundle_file']}")
+            
+            with global_flow_lock:
+                if request.app.ctx.global_attack_flow:
+                    request.app.ctx.global_attack_flow["peer_push_scheduled"] = True
+
         # Get current attack flow status for response
         flow_status = flow_handler.get_status()
         
@@ -914,6 +977,52 @@ try {{
         "stderr": err,
         "ssh_key_setup": message
     }, status=(200 if rc == 0 else 500))
+
+
+# ---------------------------------------------------------------
+# Peer bundle-sharing -- SERVER side
+# Accepts a STIX bundle POSTed by a peer IoB instance and saves it
+# to the local STIX storage directory.
+# Validates Bearer token when PEER_AUTH_TOKEN is configured.
+# ---------------------------------------------------------------
+@app.route("/api/stix-bundles/receive", methods=["POST"])
+async def receive_stix_bundle(request):
+    '''Receive a STIX bundle pushed by a peer IoB instance.
+
+    Expects multipart/form-data with a field named 'bundle'
+    containing the JSON bundle file.
+    '''
+    if not PEER_AUTH_TOKEN:
+        logger.info("No token set, refusing bundle...")
+        return response.json({"status": "error", "message": "Unauthorized"}, status=401)
+    if PEER_AUTH_TOKEN:
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer ") or auth_header[7:] != PEER_AUTH_TOKEN:
+            logger.warning("Bundle push rejected: invalid or missing auth token")
+            return response.json({"status": "error", "message": "Unauthorized"}, status=401)
+
+    uploaded = request.files.get("bundle")
+    if not uploaded:
+        return response.json({"status": "error", "message": "No bundle file in request"}, status=400)
+
+    if not uploaded.name.endswith(".json"):
+        return response.json({"status": "error", "message": "Only .json bundle files accepted"}, status=400)
+
+    try:
+        STIX_STORAGE_PATH.mkdir(parents=True, exist_ok=True)
+        peer_filename = f"peer-{uploaded.name}"
+        file_path = STIX_STORAGE_PATH / peer_filename
+        with open(file_path, 'wb') as f:
+            f.write(uploaded.body)
+        logger.info(f"Received STIX bundle from peer: {peer_filename} ({len(uploaded.body)} bytes)")
+        return response.json({
+            "status": "success",
+            "message": "Bundle received and stored",
+            "filename": uploaded.name
+        })
+    except Exception as e:
+        logger.error(f"Failed to save received bundle: {e}")
+        return response.json({"status": "error", "message": str(e)}, status=500)
 
 @app.route("/routes")
 async def list_routes(request):

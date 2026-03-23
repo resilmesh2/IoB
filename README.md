@@ -119,6 +119,24 @@ The Sanic Web Server provides these endpoints:
 ### Static Content
 - `/builder` - Attack Flow Builder frontend (Vue.js)
 - `/cti-stix-visualization` - STIX visualization tool
+- 
+## Peer bundle sharing
+
+When an attack flow completes, the server can automatically push the generated STIX bundle to another IoB instance.
+
+**To enable outbound push**, set `PEER_URL` in your `.env`:
+```bash
+PEER_URL=http://iob-instance-b:9003
+```
+
+**To enable inbound receiving**, set `PEER_AUTH_TOKEN`:
+```bash
+PEER_AUTH_TOKEN=your-shared-secret
+```
+
+Both instances must use the same `PEER_AUTH_TOKEN`. If `PEER_URL` is not set, no push is attempted. If `PEER_AUTH_TOKEN` is not set, the receiver rejects all incoming bundles.
+
+Received bundles are saved to `STIX_STORAGE_PATH` with a `peer-` prefix to distinguish them from locally generated ones.
 
 ## Data Persistence
 

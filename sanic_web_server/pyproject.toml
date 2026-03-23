@@ -14,6 +14,7 @@ dependencies = [
     "neo4j>=5.0.0",
     "stix2>=3.0.0",
     "stix2-patterns>=2.0.0",
+    "aiohttp>=3.8.0",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
