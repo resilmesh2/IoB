@@ -34,6 +34,8 @@ services:
       - FLOW_DIR=/app/docs/attackflow_graphs
       - STORAGE_PATH=/app/alerts
       - STIX_STORAGE_PATH=/app/stix_bundles
+      - PEER_URL=${PEER_URL:-}
+      - PEER_AUTH_TOKEN=${PEER_AUTH_TOKEN:-}
     volumes:
       - ./sanic_web_server/docs:/app/docs
       - ./attack_flow_builder/dist:/app/attack_flow_builder/dist:ro
